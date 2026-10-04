@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "load_path": [
+    ".",
+    "lisp",
+    "tests",
+    "../../etaf",
+    "../../etaf-ui",
+    "../../ebox",
+    "../../ecss"
+  ],
+  "support": [],
+  "cases": [
+    {
+      "name": "etaf-algo-lab-tests-labs-and-lifecycle",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "The catalog lists both laboratories and closing releases the workspace runtime and buffer."
+    },
+    {
+      "name": "etaf-algo-lab-tests-player-controls-publish-status",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "Play, pause, single step and reset each publish their documented status and counters."
+    },
+    {
+      "name": "etaf-algo-lab-tests-pathfinding-finds-shortest-route",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "A*, Dijkstra and BFS all find the same five-step detour around an edited obstacle."
+    },
+    {
+      "name": "etaf-algo-lab-tests-pathfinding-copy-explains-phases-and-remembers",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "The introduction, narration and cross-run memory explain the colors, the phase and the explored counts."
+    },
+    {
+      "name": "etaf-algo-lab-tests-pathfinding-unreachable-explains-why",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "An enclosed start terminates explicitly and the narration tells the user to remove a wall."
+    },
+    {
+      "name": "etaf-algo-lab-tests-compare-is-headless-and-explains-cost",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "Batch comparison reports every algorithm with real explored counts and leaves the live run untouched."
+    },
+    {
+      "name": "etaf-algo-lab-tests-sorting-finishes-sorted-for-every-algorithm",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "Bubble, insertion, selection and merge sorts all end with ascending data and non-zero counters."
+    },
+    {
+      "name": "etaf-algo-lab-tests-sorting-compare-ranks-the-algorithms",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "The comparison runs all four sorts on one input and shows merge using fewer comparisons than bubble."
+    },
+    {
+      "name": "etaf-algo-lab-tests-switching-laboratory-disposes-old-session",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "Switching laboratories removes the previous board and starts the new one in the ready state."
+    }
+  ]
+}
