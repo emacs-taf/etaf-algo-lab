@@ -47,6 +47,15 @@
 
 ;;; Code:
 
+;;;###autoload
+(eval-and-compile
+  (add-to-list 'load-path
+               (expand-file-name "lisp"
+                                 (file-name-directory
+                                  (or load-file-name
+                                      (bound-and-true-p byte-compile-current-file)
+                                      buffer-file-name)))))
+
 (require 'etaf-algo-lab-app)
 
 (provide 'etaf-algo-lab)

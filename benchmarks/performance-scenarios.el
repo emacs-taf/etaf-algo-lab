@@ -35,7 +35,8 @@
                  (etaf-dispatch-event runtime 'al-step 'press)))
      :verify (lambda ()
                (and (> (etaf-runtime-generation runtime) before)
-                    (etaf-host-ref-bounds runtime 'al-counters)))
+                    (not (null (etaf-host-ref-bounds runtime 'al-counters)))
+                    t))
      :outcome (lambda ()
                 (list :generation (etaf-runtime-generation runtime)
                       :counters (string-trim
