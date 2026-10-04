@@ -303,7 +303,7 @@
 (defun etaf-algo-lab--pf-counters (model)
   "Return MODEL's counter line: explored, frontier and route length."
   (let ((search (etaf-algo-lab--pf-model-search model)))
-    (format "探索 %4d 格   前沿 %4d 格   路径 %4s 步"
+    (format "探索 %d 格 · 前沿 %d 格 · 路径 %s 步"
             (etaf-algo-lab--pf-search-expanded search)
             (etaf-algo-lab--pf-search-frontier search)
             (or (etaf-algo-lab--pf-search-distance search) "--"))))
@@ -315,7 +315,7 @@
          (expanded (etaf-algo-lab--pf-search-expanded search)))
     (cond
      ((eq phase 'unreachable) "起点被墙围住了，终点摸不到。擦掉几堵墙再试。")
-     ((eq phase 'found) "完成：黄色就是最短路线。点「批量对比」看三种算法各摸了多少格。")
+     ((eq phase 'found) "完成：黄色就是最短路线。点「批量对比」比三种算法。")
      ((eq phase 'trace) "碰到终点了，正沿记录倒推回来，把路线一格格点亮。")
      ((> expanded 0) "正在从起点向外扩散：蓝色是候选，深色是走过的。")
      (t "按「开始/继续」自动跑；想细看就按「单步」。"))))
@@ -340,9 +340,9 @@
      (text :background-color (cdr (assq 'start etaf-algo-lab--pf-colors)) " S 起点 ")
      (text :background-color (cdr (assq 'goal etaf-algo-lab--pf-colors)) " G 终点 ")
      (text :background-color (cdr (assq 'wall etaf-algo-lab--pf-colors)) " # 障碍 ")
-     (text :background-color (cdr (assq 'frontier etaf-algo-lab--pf-colors)) " 前沿·待查 ")
-     (text :background-color (cdr (assq 'visited etaf-algo-lab--pf-colors)) " 已探索·走过 ")
-     (text :background-color (cdr (assq 'path etaf-algo-lab--pf-colors)) " + 路径·答案 "))))
+     (text :background-color (cdr (assq 'frontier etaf-algo-lab--pf-colors)) " 前沿 ")
+     (text :background-color (cdr (assq 'visited etaf-algo-lab--pf-colors)) " 已探索 ")
+     (text :background-color (cdr (assq 'path etaf-algo-lab--pf-colors)) " 路径 "))))
 
 (defun etaf-algo-lab--pf-cell-ref (row column)
   "Return the public address of the cell at ROW and COLUMN."
@@ -394,7 +394,7 @@
              (pcase (etaf-value (aref (etaf-algo-lab--pf-model-cells model)
                                       (etaf-algo-lab--pf-index model row column)))
                ('start "S") ('goal "G") ('wall "#") ('path "+")
-               ('current "@") (_ ".")))
+               ('current "@") (_ "·")))
            :on-cell-press
            (lambda (row column)
              (when (etaf-algo-lab--pf-edit model row column)

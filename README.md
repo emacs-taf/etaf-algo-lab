@@ -74,27 +74,40 @@ the player, keys, comparison button and layout come for free.
 
 ## Performance
 
-**Measured state: a single step costs ~340 ms and the 100 ms budget fails.**
-The publication is *not* the problem (3.3 ms, `full-root=nil`, 42 touched
-characters); the commit is. Ebox answers every reactive write with
-`ordinary-fallback`/`mixed-owner-reflow`: only 4 objects reconcile, but the
-whole tree is laid out again (layout 240 ms, projection 42 ms) because the
-patch proof cannot stay local — the step dirties several owners in two
-different subtrees (counters/narration/memory on the left, board cells on the
-right).
+**Measured state: one step commits through the native frame, p95 ≈ 90 ms
+against the 100 ms budget (GUI, 3 sets × 30 samples + 5 warmups).**
 
-Eliminated by minimal reproduction (each still `native-frame`, ~12 ms): the
-wrapping flex skeleton, the padded card box, a theme provided at the root, an
-`:if` label that reads a ref during render, and a component boundary around
-the board. The remaining difference between those reproductions and this
-workspace is the number of owners a step dirties and the size of the tree
-(~780 objects).
+| scenario | p50 | p95 |
+| --- | --- | --- |
+| `algolab.pathfinding.step.callback` | 71.4 ms | 89.2 ms |
+| `algolab.pathfinding.step.keyboard` | 76.0 ms | 89.6 ms |
 
-The documented way out for hot paths is to stop writing reactive refs per
-step and publish retained Host content updates instead (the route
-`etaf-runtime-update-host-content` and the catalog's retained-icon pattern
-use); that bypasses the render pipeline entirely. Until that lands, treat the
-animation as functionally complete but not performance-accepted.
+The publication stays tiny (3 ms, `full-root=nil`, 42 touched characters) and
+the Ebox commit now answers with `native-frame` (`reconciled=0`, layout
+≈ 11 ms).  The rest of the wall time is the driver's settlement/redisplay
+boundary (~45 ms), not application work.
+
+The slow path had two causes, both fixed:
+
+- **This workspace** put page padding on the scroll owner and nested a second
+  full-height scroll region inside the first.  A padded scroll container can
+  neither produce a native scroll plan nor stay on the fast path, and the
+  nested region duplicated the whole interactive page inside one scroll
+  producer.  The application now has exactly one undecorated page scroll
+owner, page padding inside it, and panels that hug their charts.
+- **Ebox** forced a column flex item in an auto-height container to its
+  intrinsic measured main size, so a wrapped card overflowed its own padding
+  box; the padded box then became a scroll owner without a plan and the whole
+  frame fell back to the Elisp layout.  Fixed in ebox `c248077` (auto-height
+  column items keep their natural main size; tape validation accepts the
+  derived sticky properties; scroll-producer literals from the matched
+  encoder skip their repeated rescan).
+
+A 90-sample run can still show one or two samples above the budget (GC or a
+slow redisplay inside the measured boundary); the aggregate p95 above is the
+accepted figure.  Evidence is written under `~/.cache/emacs-taf/performance/`
+with `valid=true` and `acceptance_eligible=true`.  A minimal reproduction is
+kept in `~/.pi/reports/etaf-algo-lab-perf/` in case the fast path regresses.
 
 A hidden window, a finished laboratory and a closed or replaced buffer all
 stop the animation, and one timer per mount is the only scheduled work. `make gui` and the shared driver measure the real
@@ -116,3 +129,8 @@ make gui     # 20 real GUI actions in an existing owned server; prints evidence
 `make gui` writes window-only screenshots plus `result.json`. A passing run
 proves the functional assertions only; review the images, and treat background
 timing as a screen rather than a foreground latency certificate.
+
+Two environment traps worth knowing before rerunning the GUI checks: a
+full-screen frame ignores `set-frame-size` (the scenario clears that state
+first), and the performance driver refuses packages edited or rebuilt after
+the verification instance started, so compile before starting the instance.

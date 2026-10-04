@@ -296,10 +296,13 @@
     ('running "#4ADE80") ('finished "#60A5FA") ('paused "#FBBF24") (_ "#9CADC1")))
 
 (defun etaf-algo-lab--keys-text (lab)
-  "Return LAB's complete key hint line."
-  (concat "p 开始/暂停 · n 单步 · f 跳到完成 · r 重置 · c 批量对比 · q 关闭"
-          (let ((hint (etaf-algo-lab--lab-keys-hint lab)))
-            (if (equal "" hint) "" (concat " · " hint)))))
+  "Return LAB's player key hint line."
+  (ignore lab)
+  "p 开始/暂停 · n 单步 · f 跳到完成 · r 重置 · c 批量对比 · q 关闭")
+
+(defun etaf-algo-lab--keys-hint-text (lab)
+  "Return LAB's laboratory-specific key hint line, or an empty string."
+  (or (etaf-algo-lab--lab-keys-hint lab) ""))
 
 (defun etaf-algo-lab--board-view (lab session)
   "Return LAB's board component for SESSION."
@@ -329,75 +332,91 @@ in the same reading order, so the board never pushes the controls off screen."
            (etaf-theme-provide etaf-algo-lab-palette)
            (etaf-algo-lab--install session))
   :view
-  (column :width '(vw 100) :height '(vh 100) :overflow 'scroll
-          :padding '((lh 1) (ch 2)) :item-gap '(lh 0)
-          :color (etaf-algo-lab-token :fg)
-          :background-color (etaf-algo-lab-token :bg)
-    (flex :width 'stretch :flex-wrap 'wrap :gap '((lh 0) (ch 2))
-          :align-items 'baseline :justify-content 'space-between
-      (text :font-weight 'bold (expr (etaf-algo-lab--lab-title lab)))
-      (text :ref 'al-status
-            :color (etaf-algo-lab--status-color
-                    (etaf-value (etaf-algo-lab--session-status session)))
-            (expr (etaf-algo-lab--status-text
-                   (etaf-value (etaf-algo-lab--session-status session))))))
-    (expr (etaf-algo-lab--intro-view lab))
-    (flex :width 'stretch :flex-wrap 'wrap :gap '((lh 1) (ch 2))
-          :align-items 'flex-start
-      (column :flex-basis '(ch 38) :flex-grow 1 :min-width '(ch 24)
-              :item-gap '(lh 1)
-        (box :width 'stretch :background-color (etaf-algo-lab-token :surface)
-             :box-sizing 'border-box :padding '((lh 1) (ch 2))
-          (column :item-gap '(lh 1)
-            (flex :flex-wrap 'wrap :gap '((lh 1) (ch 1)) :align-items 'center
-              (etaf-button :label "开始/继续" :ref 'al-start :on-press
-                           (lambda () (etaf-algo-lab--act session 'start)))
-              (etaf-button :label "暂停" :ref 'al-pause :variant 'secondary :on-press
-                           (lambda () (etaf-algo-lab--act session 'pause)))
-              (etaf-button :label "单步" :ref 'al-step :variant 'secondary :on-press
-                           (lambda () (etaf-algo-lab--act session 'step)))
-              (etaf-button :label "跳到完成" :ref 'al-finish :variant 'secondary
-                           :help-echo "一秒算完并直接看结果，不播动画"
-                           :on-press (lambda () (etaf-algo-lab--act session 'finish))))
-            (flex :flex-wrap 'wrap :gap '((lh 1) (ch 1)) :align-items 'center
-              (etaf-button :label "重置" :ref 'al-reset :variant 'ghost :on-press
-                           (lambda () (etaf-algo-lab--act session 'reset)))
-              (etaf-button :if (etaf-algo-lab--lab-compare lab)
-                           :label "批量对比" :ref 'al-compare :variant 'ghost
-                           :help-echo "只计算、不播动画，用当前地图或数据一次跑完所有算法"
-                           :on-press (lambda () (etaf-algo-lab--act session 'compare)))
-              (etaf-select :label "速度" :ref 'al-speed
-                           :value (etaf-value (etaf-algo-lab--session-speed session))
-                           :options etaf-algo-lab--speeds :presentation 'chips
-                           :on-change (lambda (next)
-                                        (setf (etaf-value (etaf-algo-lab--session-speed session))
-                                              next)
-                                        (etaf-algo-lab--arm session))))
-            (expr (etaf-algo-lab--controls-view lab session))))
-        (box :width '(ch 44) :height '(lh 1) :wrap-mode 'none :overflow 'hidden
-          (text :ref 'al-counters
-                (expr (etaf-value (etaf-algo-lab--session-counters session)))))
-        (box :width '(ch 44) :height '(lh 1) :wrap-mode 'none :overflow 'hidden
-          (text :ref 'al-memory :color (etaf-algo-lab-token :muted)
-                (expr (etaf-value (etaf-algo-lab--session-memory session)))))
-        (etaf-label :if (not (equal "" (etaf-value (etaf-algo-lab--session-research session))))
-                    :width 'stretch :wrap-mode 'word :variant 'success
-                    :text (etaf-algo-lab--session-research session))
-        (etaf-label :if (not (equal "" (etaf-value (etaf-algo-lab--session-notice session))))
-                    :width 'stretch :wrap-mode 'word :variant 'muted
-                    :text (etaf-algo-lab--session-notice session)))
-      (column :flex-basis '(ch 62) :flex-grow 2 :min-width '(ch 0)
-              :item-gap '(lh 1)
-        (box :width 'stretch :background-color (etaf-algo-lab-token :surface)
-             :box-sizing 'border-box :padding '((lh 1) (ch 2))
-          (column :item-gap '(lh 1)
-            (expr (etaf-algo-lab--board-view lab session))
-            (expr (funcall (etaf-algo-lab--lab-legend lab) session))))
-        (box :width '(ch 62) :height '(lh 1) :wrap-mode 'none :overflow 'hidden
-          (text :ref 'al-narration :color "#FBBF24"
-                (expr (etaf-value (etaf-algo-lab--session-narration session)))))))
-    (etaf-label :variant 'muted :width 'stretch :wrap-mode 'word
-                :text (etaf-algo-lab--keys-text lab))))
+  ;; The application above owns the page chrome (the scroll owner, the page
+  ;; background, the centred capped measure and the page padding); the player
+  ;; renders one section stack with exactly one blank line between sections.
+  ;; Every panel shares one surface, padding and inner gap, and the chart
+  ;; panel hugs its fixed-width chart instead of leaving an empty strip.
+  (column :width '(vw 100) :overflow 'hidden :item-gap '(lh 1)
+      (flex :flex-wrap 'wrap :gap '((lh 0) (ch 2))
+            :align-items 'baseline
+        (text :font-weight 'bold (expr (etaf-algo-lab--lab-title lab)))
+        (text :ref 'al-status
+              :color (etaf-algo-lab--status-color
+                      (etaf-value (etaf-algo-lab--session-status session)))
+              (expr (etaf-algo-lab--status-text
+                     (etaf-value (etaf-algo-lab--session-status session))))))
+      (column :width 'stretch :item-gap '(lh 0)
+        (expr (etaf-algo-lab--intro-view lab)))
+      (flex :flex-wrap 'wrap :gap '((lh 1) (ch 2))
+            :align-items 'flex-start
+        (column :flex-basis '(ch 48) :flex-grow 1 :min-width '(ch 30)
+                :item-gap '(lh 1)
+          (box :width 'stretch :background-color (etaf-algo-lab-token :surface)
+               :box-sizing 'border-box :padding '((lh 1) (ch 2))
+            (column :item-gap '(lh 1)
+              (flex :flex-wrap 'wrap :gap '((lh 0) (ch 1)) :align-items 'center
+                (etaf-button :label "开始/继续" :ref 'al-start :on-press
+                             (lambda () (etaf-algo-lab--act session 'start)))
+                (etaf-button :label "暂停" :ref 'al-pause :variant 'secondary :on-press
+                             (lambda () (etaf-algo-lab--act session 'pause)))
+                (etaf-button :label "单步" :ref 'al-step :variant 'secondary :on-press
+                             (lambda () (etaf-algo-lab--act session 'step)))
+                (etaf-button :label "跳到完成" :ref 'al-finish :variant 'secondary
+                             :help-echo "一秒算完并直接看结果，不播动画"
+                             :on-press (lambda () (etaf-algo-lab--act session 'finish))))
+              (flex :flex-wrap 'wrap :gap '((lh 0) (ch 2)) :align-items 'center
+                (etaf-button :label "重置" :ref 'al-reset :variant 'ghost :on-press
+                             (lambda () (etaf-algo-lab--act session 'reset)))
+                (etaf-button :if (etaf-algo-lab--lab-compare lab)
+                             :label "批量对比" :ref 'al-compare :variant 'ghost
+                             :help-echo "只计算、不播动画，用当前地图或数据一次跑完所有算法"
+                             :on-press (lambda () (etaf-algo-lab--act session 'compare))))
+              (flex :flex-wrap 'wrap :gap '((lh 0) (ch 1)) :align-items 'center
+                (etaf-select :label "速度" :ref 'al-speed
+                             :value (etaf-value (etaf-algo-lab--session-speed session))
+                             :options etaf-algo-lab--speeds :presentation 'chips
+                             :on-change (lambda (next)
+                                          (setf (etaf-value (etaf-algo-lab--session-speed session))
+                                                next)
+                                          (etaf-algo-lab--arm session))))
+              (expr (etaf-algo-lab--controls-view lab session))))
+          (box :width 'stretch :background-color (etaf-algo-lab-token :surface)
+               :box-sizing 'border-box :padding '((lh 1) (ch 2))
+            (column :item-gap '(lh 1)
+              (box :width 'stretch :height '(lh 1) :wrap-mode 'none :overflow 'hidden
+                (text :ref 'al-counters
+                      (expr (etaf-value (etaf-algo-lab--session-counters session)))))
+              (box :width 'stretch :height '(lh 1) :wrap-mode 'none :overflow 'hidden
+                (text :ref 'al-memory :color (etaf-algo-lab-token :muted)
+                      (expr (etaf-value (etaf-algo-lab--session-memory session)))))))
+          (etaf-label :if (not (equal "" (etaf-value (etaf-algo-lab--session-research session))))
+                      :width 'stretch :wrap-mode 'word :variant 'success
+                      :text (etaf-algo-lab--session-research session))
+          (etaf-label :if (not (equal "" (etaf-value (etaf-algo-lab--session-notice session))))
+                      :width 'stretch :wrap-mode 'word :variant 'muted
+                      :text (etaf-algo-lab--session-notice session)))
+        (column :flex-basis '(ch 58) :flex-grow 0 :min-width '(ch 0)
+                :item-gap '(lh 1)
+          ;; The chart panel is exactly the chart width plus its padding, so
+          ;; the panel never shows a lopsided empty strip beside the board.
+          ;; A longer legend wraps inside this fixed measure.
+          (box :width '(ch 58) :background-color (etaf-algo-lab-token :surface)
+               :box-sizing 'border-box :padding '((lh 1) (ch 2))
+            (column :item-gap '(lh 1)
+              (expr (etaf-algo-lab--board-view lab session))
+              (expr (funcall (etaf-algo-lab--lab-legend lab) session))))
+          (box :width 'stretch :height '(lh 1) :wrap-mode 'none :overflow 'hidden
+            (text :ref 'al-narration :color "#FBBF24"
+                  (expr (etaf-value (etaf-algo-lab--session-narration session)))))))
+      ;; Two short hint lines instead of one long one: a label keeps its
+      ;; intrinsic width here, so an over-long line would be clipped by the
+      ;; scroll container instead of wrapping.
+      (etaf-label :variant 'muted :width 'stretch :wrap-mode 'word
+                  :text (etaf-algo-lab--keys-text lab))
+      (etaf-label :if (not (equal "" (etaf-algo-lab--keys-hint-text lab)))
+                  :variant 'muted :width 'stretch :wrap-mode 'word
+                  :text (etaf-algo-lab--keys-hint-text lab))))
 
 (provide 'etaf-algo-lab-player)
 ;;; etaf-algo-lab-player.el ends here

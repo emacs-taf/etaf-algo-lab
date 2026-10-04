@@ -53,22 +53,35 @@
   :bindings ((current (etaf-ref (or etaf-algo-lab--initial-lab
                                     etaf-algo-lab-default-lab))))
   :view
+  ;; The page owns the scroll region, the page background and the centred
+  ;; measure.  The content column is capped at 98 columns so an ultra-wide
+  ;; frame keeps one readable composition centred in the window instead of a
+  ;; stretched strip; a narrow frame shrinks it to the viewport.  The page
+  ;; scroll owner itself stays undecorated: the native frame can only retain
+  ;; a scroll producer for a box without padding, so the padding belongs to
+  ;; the capped inner column.
   (column :width '(vw 100) :height '(vh 100) :overflow 'scroll
-          :padding '((lh 1) (ch 2)) :item-gap '(lh 1)
+          :cross-align 'center
           :color (etaf-algo-lab-token :fg)
           :background-color (etaf-algo-lab-token :bg)
-    (flex :width 'stretch :flex-wrap 'wrap :gap '((lh 0) (ch 2))
-          :align-items 'baseline :justify-content 'space-between
-      (text :font-weight 'bold "算法实验室")
-      (etaf-select :label "实验室" :ref 'al-catalog
-                   :value (etaf-value current)
-                   :options (etaf-algo-lab--catalog-options)
-                   :presentation 'chips
-                   :on-change (lambda (next) (setf (etaf-value current) next))))
-    (expr (etaf-node 'etaf-algo-lab--player
-                     (list :key (etaf-value current)
-                           :lab-id (etaf-value current))
-                     nil))))
+    (column :width '(vw 100) :max-width '(ch 110) :box-sizing 'border-box
+            :padding '((lh 1) (ch 1)) :item-gap '(lh 1)
+      ;; One bar: the workspace name and the laboratory switcher.  The
+      ;; switcher needs no redundant "实验室" label because the title already
+      ;; names the workspace, and the bar stays left-aligned at the capped
+      ;; measure because flex lines cannot stretch to their container here.
+      (flex :flex-wrap 'wrap :gap '((lh 0) (ch 2))
+            :align-items 'center
+        (text :font-weight 'bold "算法实验室")
+        (etaf-select :ref 'al-catalog :hide-label t
+                     :value (etaf-value current)
+                     :options (etaf-algo-lab--catalog-options)
+                     :presentation 'chips
+                     :on-change (lambda (next) (setf (etaf-value current) next))))
+      (expr (etaf-node 'etaf-algo-lab--player
+                       (list :key (etaf-value current)
+                             :lab-id (etaf-value current))
+                       nil)))))
 
 (defun etaf-algo-lab-open (&optional lab buffer-name)
   "Open the laboratory workspace in BUFFER-NAME, selecting LAB.

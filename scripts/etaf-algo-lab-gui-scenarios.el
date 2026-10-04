@@ -57,9 +57,14 @@
     (when posn (posn-col-row posn))))
 
 (defun etaf-algo-lab-gui--numbers (context ref)
-  "Read CONTEXT's space-separated numbers inside REF."
-  (mapcar #'string-to-number
-          (split-string (string-trim (etaf-algo-lab-gui--text context ref)) " +")))
+  "Read CONTEXT's numeric tokens inside REF.
+The sorting chart prints its values in the bottom row of one grid block, so
+only digit-only tokens count; the carrier's other whitespace is filler."
+  (delq nil
+        (mapcar (lambda (token)
+                  (and (string-match-p "\\`[0-9]+\\'" token)
+                       (string-to-number token)))
+                (split-string (etaf-algo-lab-gui--text context ref) "[ \t\n]+"))))
 
 (defun etaf-algo-lab-gui--action (id execute verify &optional timeout)
   "Create an ordered screenshot action ID with EXECUTE and VERIFY."
@@ -86,15 +91,34 @@
    (etaf-gui-verifier-line-height-assertions
     (etaf-gui-verifier-context-target-buffer context))))
 
+(defun etaf-algo-lab-gui--canvas-settled-p (context)
+  "Return non-nil when CONTEXT's canvas repainted for the current window.
+`etaf-gui-verifier-canvas-filled-p' requires pixel-exact equality.  With
+fractional font metrics (macOS) the line-quantized canvas can legitimately be
+up to one character cell shorter than the window body, so accept that
+rounding while still rejecting a canvas left over from another size."
+  (let ((buffer (etaf-gui-verifier-context-target-buffer context)))
+    (or (etaf-gui-verifier-canvas-filled-p buffer)
+        (when-let* ((window (get-buffer-window buffer)))
+          (with-current-buffer buffer
+            (let ((delta (- (window-body-height window t)
+                            (cdr (window-text-pixel-size window)))))
+              (and (<= 0 delta (frame-char-height)))))))))
+
+(defun etaf-algo-lab-gui--resize (width height)
+  "Resize the selected frame to WIDTH by HEIGHT and settle on the new size.
+A full-screen frame ignores `set-frame-size', so clear that state first."
+  (set-frame-parameter (selected-frame) 'fullscreen nil)
+  (set-frame-size (selected-frame) width height))
+
 (defun etaf-algo-lab-gui--layout (width height)
   "Create a layout action for WIDTH and HEIGHT."
   (etaf-algo-lab-gui--action
    (format "layout-%dx%d" width height)
-   (lambda (_context) (set-frame-size (selected-frame) width height))
+   (lambda (_context) (etaf-algo-lab-gui--resize width height))
    (lambda (context)
      (and (= (frame-width) width) (= (frame-height) height)
-          (etaf-gui-verifier-canvas-filled-p
-           (etaf-gui-verifier-context-target-buffer context))
+          (etaf-algo-lab-gui--canvas-settled-p context)
           (etaf-host-ref-bounds (etaf-algo-lab-gui--runtime context) 'al-step)))))
 
 (defun etaf-algo-lab-gui--scenario ()
@@ -131,7 +155,9 @@
       (lambda (c) (etaf-algo-lab-gui--press c 'pf-cell-0-0)
         (etaf-algo-lab-gui--choose c 'pf-tool "擦除")
         (etaf-algo-lab-gui--press c 'pf-cell-0-0))
-      (lambda (c) (string-match-p "\\. *\\. *\\." (replace-regexp-in-string "\n" " " (etaf-algo-lab-gui--text c)))))
+      ;; Empty board cells render as a middle dot; three adjacent empty
+      ;; cells prove the paint-then-erase round trip restored the terrain.
+      (lambda (c) (string-match-p "· *· *·" (replace-regexp-in-string "\n" " " (etaf-algo-lab-gui--text c)))))
      (etaf-algo-lab-gui--action
       "move-start-and-goal"
       (lambda (c) (etaf-algo-lab-gui--choose c 'pf-tool "起点")
@@ -202,23 +228,23 @@
     (list
      (etaf-algo-lab-gui--action
       "wide-window-splits-into-two-columns"
-      (lambda (_c) (set-frame-size (selected-frame) 130 50))
+      (lambda (_c) (etaf-algo-lab-gui--resize 130 50))
       (lambda (c)
         (let ((panel (etaf-algo-lab-gui--cell-rc c 'al-counters))
               (board (etaf-algo-lab-gui--cell-rc c 'sort-values)))
           (and panel board
                (> (car board) (car panel))
-               (etaf-gui-verifier-canvas-filled-p
-                (etaf-gui-verifier-context-target-buffer c))))))
+               (etaf-algo-lab-gui--canvas-settled-p c)))))
      (etaf-algo-lab-gui--action
       "narrow-window-wraps-back-to-one-column"
-      (lambda (_c) (set-frame-size (selected-frame) 60 50))
+      (lambda (_c) (etaf-algo-lab-gui--resize 60 50))
       (lambda (c)
         (let ((panel (etaf-algo-lab-gui--cell-rc c 'al-counters))
               (board (etaf-algo-lab-gui--cell-rc c 'sort-values)))
           (and panel board
                (<= (abs (- (car board) (car panel))) 3)
-               (> (cdr board) (cdr panel)))))))
+               (> (cdr board) (cdr panel))
+               (etaf-algo-lab-gui--canvas-settled-p c))))))
     (mapcar (lambda (size) (etaf-algo-lab-gui--layout (car size) (cdr size)))
             '((130 . 50) (90 . 50) (60 . 50) (60 . 32)))
     (list

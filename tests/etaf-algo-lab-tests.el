@@ -60,9 +60,14 @@ LIMIT is accepted for call-site readability and bounds a stepping fallback."
     (string-to-number (match-string 1 text))))
 
 (defun etaf-algo-lab-test--numbers (runtime ref)
-  "Read RUNTIME's space-separated numbers in REF."
-  (mapcar #'string-to-number
-          (split-string (string-trim (etaf-algo-lab-test--text runtime ref)) " +")))
+  "Read RUNTIME's numeric tokens in REF.
+The sorting chart prints its values in the bottom row of one grid block, so
+only digit-only tokens count; the carrier's other whitespace is filler."
+  (delq nil
+        (mapcar (lambda (token)
+                  (and (string-match-p "\\`[0-9]+\\'" token)
+                       (string-to-number token)))
+                (split-string (etaf-algo-lab-test--text runtime ref) "[ \t\n]+"))))
 
 (cl-defmacro etaf-algo-lab-test--with ((buffer runtime) lab &rest body)
   "Run BODY in a fresh workspace BUFFER playing LAB."

@@ -302,19 +302,19 @@
 
 (defun etaf-algo-lab--sort-counters (model)
   "Return MODEL's counter line."
-  (format "比较 %4d 次    写入 %4d 次"
+  (format "比较 %d 次 · 写入 %d 次"
           (etaf-algo-lab--sort-model-comparisons model)
           (etaf-algo-lab--sort-model-writes model)))
 
 (defun etaf-algo-lab--sort-narration (model)
   "Return MODEL's plain-language narration line."
   (if (etaf-algo-lab--sort-terminal model)
-      "完成。点「批量对比」看四种算法在同一组数据上各比较了多少次。"
+      "完成。点「批量对比」看四种算法各比较了多少次。"
     (pcase (etaf-value (etaf-algo-lab--sort-model-algorithm model))
-      ('bubble "冒泡：比相邻两列，左边大就换到右边；一趟下来最大的沉到末尾。")
+      ('bubble "冒泡：相邻两列大的换到右边；一趟下来最大的沉到末尾。")
       ('insert "插入：右边的新数字往左挪，直到找到它该待的位置。")
-      ('select "选择：每轮在剩下的数字里挑出最小的，放到已排好的后面。")
-      ('merge "归并：先两两合并成有序小段，再一段段合并成整段有序。"))))
+      ('select "选择：每轮挑出剩下最小的，放到已排好的后面。")
+      ('merge "归并：先两两合并成有序小段，再合成整段。"))))
 
 (defun etaf-algo-lab--sort-memory (model)
   "Return MODEL's cross-run memory line."
@@ -337,41 +337,64 @@
      (text :background-color (cdr (assq 'write etaf-algo-lab--sort-colors)) " 正在写回 ")
      (text :background-color (cdr (assq 'sorted etaf-algo-lab--sort-colors)) " 已排好 "))))
 
+(defconst etaf-algo-lab--sort-cell-width 2
+  "Column width of the sorting chart in characters.")
+
+(defun etaf-algo-lab--sort-gap-column-p (column)
+  "Return non-nil when grid COLUMN is the separator between two bars.
+Every bar owns one two-character column and every pair of bars is separated
+by one dark gap column, so neighbouring bars never read as one block."
+  (= 1 (mod column 2)))
+
+(defun etaf-algo-lab--sort-bar-index (column)
+  "Return the model index shown in grid COLUMN."
+  (/ column 2))
+
 (defun etaf-algo-lab--sort-values-text (model)
-  "Return MODEL's current data as one space-separated line."
-  (mapconcat (lambda (index)
-               (format "%2d" (etaf-algo-lab--sort-value model index)))
-             (number-sequence 0 (1- (etaf-algo-lab--sort-model-n model))) " "))
+  "Return MODEL's values as one line aligned under the chart columns.
+Every bar owns a two-character column and every gap owns two characters, so
+each value is printed in two characters followed by two filler spaces."
+  (let ((bars (etaf-algo-lab--sort-model-n model)))
+    (mapconcat (lambda (index)
+                 (format "%2d" (etaf-value
+                                (aref (etaf-algo-lab--sort-model-values model) index))))
+               (number-sequence 0 (1- bars)) "  ")))
 
 (etaf-define-component etaf-algo-lab--sort-board (&key session)
-  "Render the bar chart of SESSION with its current data line."
+  "Render the bar chart of SESSION with its values under the columns.
+The chart is one fixed-width block so the surrounding panel can hug it
+instead of stretching into an empty strip.  Bars never touch: every bar is
+separated from its neighbour by one dark gap column.  The `sort-values' host
+is the values line, so its bounds locate the chart row and its text carries
+every value exactly once."
   :render
-  (let ((model (etaf-algo-lab--sort-session-model session)))
+  (let* ((model (etaf-algo-lab--sort-session-model session))
+         (bars (etaf-algo-lab--sort-model-n model))
+         (levels (etaf-algo-lab--sort-model-levels model))
+         (grid-columns (1- (* bars 2))))
     (etaf-view
      (column :item-gap '(lh 0)
        (expr
         (etaf-node
          'etaf-tile-grid
-         (list :rows (etaf-algo-lab--sort-model-levels model)
-               :columns (etaf-algo-lab--sort-model-n model)
-               :cell-width 2
+         (list :rows levels :columns grid-columns
+               :cell-width etaf-algo-lab--sort-cell-width
                :cell-background
                (lambda (row column)
-                 (let* ((value (etaf-value (aref (etaf-algo-lab--sort-model-values model)
-                                                 column)))
-                        (role (etaf-value (aref (etaf-algo-lab--sort-model-roles model)
-                                                column))))
-                   (if (< row (- (etaf-algo-lab--sort-model-levels model) value))
-                       "#101925"
-                     (cdr (assq role etaf-algo-lab--sort-colors)))))
-               :cell-text
-               (lambda (row column)
-                 (if (= row (1- (etaf-algo-lab--sort-model-levels model)))
-                     (format "%2d" (etaf-value (aref (etaf-algo-lab--sort-model-values model)
-                                                      column)))
-                   " ")))
+                 (if (etaf-algo-lab--sort-gap-column-p column)
+                     "#101925"
+                   (let* ((index (etaf-algo-lab--sort-bar-index column))
+                          (value (etaf-value
+                                  (aref (etaf-algo-lab--sort-model-values model) index)))
+                          (role (etaf-value
+                                 (aref (etaf-algo-lab--sort-model-roles model) index))))
+                     (if (< row (- levels value))
+                         "#101925"
+                       (cdr (assq role etaf-algo-lab--sort-colors))))))
+               :cell-text (lambda (_row _column) " "))
          nil))
-       (box :width '(ch 62) :height '(lh 1) :wrap-mode 'none :overflow 'hidden
+       (box :width (list 'ch (* grid-columns etaf-algo-lab--sort-cell-width))
+            :height '(lh 1) :wrap-mode 'none :overflow 'hidden
          (text :ref 'sort-values :color "#9CADC1"
                (expr (etaf-algo-lab--sort-values-text model))))))))
 
