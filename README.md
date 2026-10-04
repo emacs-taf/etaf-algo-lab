@@ -74,12 +74,30 @@ the player, keys, comparison button and layout come for free.
 
 ## Performance
 
-A step publishes only what it changed. Pathfinding writes per-cell refs
-(2–30 cells per step); sorting writes one value ref and one role ref per touched
-column. Counters, narration and memory are separate fixed-height Hosts, so a
-step never re-renders the workspace. A hidden window, a finished laboratory and
-a closed or replaced buffer all stop the animation, and one timer per mount is
-the only scheduled work. `make gui` and the shared driver measure the real
+**Measured state: a single step costs ~340 ms and the 100 ms budget fails.**
+The publication is *not* the problem (3.3 ms, `full-root=nil`, 42 touched
+characters); the commit is. Ebox answers every reactive write with
+`ordinary-fallback`/`mixed-owner-reflow`: only 4 objects reconcile, but the
+whole tree is laid out again (layout 240 ms, projection 42 ms) because the
+patch proof cannot stay local — the step dirties several owners in two
+different subtrees (counters/narration/memory on the left, board cells on the
+right).
+
+Eliminated by minimal reproduction (each still `native-frame`, ~12 ms): the
+wrapping flex skeleton, the padded card box, a theme provided at the root, an
+`:if` label that reads a ref during render, and a component boundary around
+the board. The remaining difference between those reproductions and this
+workspace is the number of owners a step dirties and the size of the tree
+(~780 objects).
+
+The documented way out for hot paths is to stop writing reactive refs per
+step and publish retained Host content updates instead (the route
+`etaf-runtime-update-host-content` and the catalog's retained-icon pattern
+use); that bypasses the render pipeline entirely. Until that lands, treat the
+animation as functionally complete but not performance-accepted.
+
+A hidden window, a finished laboratory and a closed or replaced buffer all
+stop the animation, and one timer per mount is the only scheduled work. `make gui` and the shared driver measure the real
 step; `benchmarks/performance-scenarios.el` registers the workloads:
 
 ```sh
