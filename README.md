@@ -123,7 +123,7 @@ python3 ../scripts/performance.py run --mode gui --server <owned-server> \
 
 ```sh
 make check   # structure, compilation, public acceptance, API boundary
-make gui     # 20 real GUI actions in an existing owned server; prints evidence
+make gui     # 24 real GUI actions in an existing owned server; prints evidence
 ```
 
 `make gui` writes window-only screenshots plus `result.json`. A passing run
