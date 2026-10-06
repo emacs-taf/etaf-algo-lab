@@ -6,6 +6,10 @@ Learn algorithms by watching them, steering them and comparing them — inside E
 a single demo: one shared player runs any number of laboratories, and every
 laboratory describes only its own algorithm and cells.
 
+The pathfinding laboratory at a wide frame:
+
+![The pathfinding laboratory at a wide frame](examples/etaf-algo-lab-wide.png)
+
 ## What it is for
 
 | Level | Who | What the workspace gives |
