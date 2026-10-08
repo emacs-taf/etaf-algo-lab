@@ -337,7 +337,7 @@ in the same reading order, so the board never pushes the controls off screen."
   ;; renders one section stack with exactly one blank line between sections.
   ;; Every panel shares one surface, padding and inner gap, and the chart
   ;; panel hugs its fixed-width chart instead of leaving an empty strip.
-  (column :width '(vw 100) :overflow 'hidden :item-gap '(lh 1)
+  (column :width 'stretch :overflow 'hidden :item-gap '(lh 1)
       (flex :flex-wrap 'wrap :gap '((lh 0) (ch 2))
             :align-items 'baseline
         (text :font-weight 'bold (expr (etaf-algo-lab--lab-title lab)))
