@@ -28,17 +28,17 @@
                                       (with-current-buffer buffer (buffer-string)))
                   (etaf-dispatch-event runtime 'al-reset 'press))
                 (when keyboard (etaf-focus runtime 'al-step))
-                (setq before (etaf-runtime-generation runtime)))
+                (setq before (etaf-runtime-revision runtime)))
      :invoke (lambda (_sample)
                (if keyboard
                    (execute-kbd-macro (kbd "RET"))
                  (etaf-dispatch-event runtime 'al-step 'press)))
      :verify (lambda ()
-               (and (> (etaf-runtime-generation runtime) before)
+               (and (> (etaf-runtime-revision runtime) before)
                     (not (null (etaf-host-ref-bounds runtime 'al-counters)))
                     t))
      :outcome (lambda ()
-                (list :generation (etaf-runtime-generation runtime)
+                (list :revision (etaf-runtime-revision runtime)
                       :counters (string-trim
                                  (let ((bounds (etaf-host-ref-bounds runtime 'al-counters)))
                                    (with-current-buffer buffer

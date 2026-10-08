@@ -57,9 +57,8 @@
   ;; measure.  The content column is capped at 98 columns so an ultra-wide
   ;; frame keeps one readable composition centred in the window instead of a
   ;; stretched strip; a narrow frame shrinks it to the viewport.  The page
-  ;; scroll owner itself stays undecorated: the native frame can only retain
-  ;; a scroll producer for a box without padding, so the padding belongs to
-  ;; the capped inner column.
+  ;; padding belongs to the capped inner column, so the scroll owner spans
+  ;; the whole window.
   (column :width '(vw 100) :height '(vh 100) :overflow 'scroll
           :cross-align 'center
           :color (etaf-algo-lab-token :fg)

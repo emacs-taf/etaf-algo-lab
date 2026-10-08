@@ -78,40 +78,10 @@ the player, keys, comparison button and layout come for free.
 
 ## Performance
 
-**Measured state: one step commits through the native frame, p95 ≈ 90 ms
-against the 100 ms budget (GUI, 3 sets × 30 samples + 5 warmups).**
-
-| scenario | p50 | p95 |
-| --- | --- | --- |
-| `algolab.pathfinding.step.callback` | 71.4 ms | 89.2 ms |
-| `algolab.pathfinding.step.keyboard` | 76.0 ms | 89.6 ms |
-
-The publication stays tiny (3 ms, `full-root=nil`, 42 touched characters) and
-the Ebox commit now answers with `native-frame` (`reconciled=0`, layout
-≈ 11 ms).  The rest of the wall time is the driver's settlement/redisplay
-boundary (~45 ms), not application work.
-
-The slow path had two causes, both fixed:
-
-- **This workspace** put page padding on the scroll owner and nested a second
-  full-height scroll region inside the first.  A padded scroll container can
-  neither produce a native scroll plan nor stay on the fast path, and the
-  nested region duplicated the whole interactive page inside one scroll
-  producer.  The application now has exactly one undecorated page scroll
-owner, page padding inside it, and panels that hug their charts.
-- **Ebox** forced a column flex item in an auto-height container to its
-  intrinsic measured main size, so a wrapped card overflowed its own padding
-  box; the padded box then became a scroll owner without a plan and the whole
-  frame fell back to the Elisp layout.  Fixed in ebox `c248077` (auto-height
-  column items keep their natural main size; tape validation accepts the
-  derived sticky properties; scroll-producer literals from the matched
-  encoder skip their repeated rescan).
-
-A 90-sample run can still show one or two samples above the budget (GC or a
-slow redisplay inside the measured boundary); the aggregate p95 above is the
-accepted figure.  Evidence is written under `~/.cache/emacs-taf/performance/`
-with `valid=true` and `acceptance_eligible=true`.  A minimal reproduction is
-kept in `~/.pi/reports/etaf-algo-lab-perf/` in case the fast path regresses.
+One animation step updates only the cells, counters and lines it changed: the
+board's Hosts stay mounted and Ebox rewrites just their buffer segments. The
+step budget is 100 ms. Three batch sets of 10 samples measure
+`algolab.pathfinding.step.callback` at p50 1.6 ms and p95 2.1 ms.
 
 A hidden window, a finished laboratory and a closed or replaced buffer all
 stop the animation, and one timer per mount is the only scheduled work. `make gui` and the shared driver measure the real
