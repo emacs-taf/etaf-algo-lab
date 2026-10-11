@@ -460,14 +460,13 @@
    :board 'etaf-algo-lab--pf-board
    :controls 'etaf-algo-lab--pf-controls
    :legend #'etaf-algo-lab--pf-legend
-   :keys (list (cons (kbd "<right>") (lambda () (interactive)
-                                        (etaf-algo-lab--pf-move-focus etaf-algo-lab--session 0 1)))
-               (cons (kbd "<left>") (lambda () (interactive)
-                                       (etaf-algo-lab--pf-move-focus etaf-algo-lab--session 0 -1)))
-               (cons (kbd "<down>") (lambda () (interactive)
-                                       (etaf-algo-lab--pf-move-focus etaf-algo-lab--session 1 0)))
-               (cons (kbd "<up>") (lambda () (interactive)
-                                     (etaf-algo-lab--pf-move-focus etaf-algo-lab--session -1 0))))
+   :direction (lambda (direction)
+                (pcase direction
+                  ('right (etaf-algo-lab--pf-move-focus etaf-algo-lab--session 0 1) 'handled)
+                  ('left (etaf-algo-lab--pf-move-focus etaf-algo-lab--session 0 -1) 'handled)
+                  ('down (etaf-algo-lab--pf-move-focus etaf-algo-lab--session 1 0) 'handled)
+                  ('up (etaf-algo-lab--pf-move-focus etaf-algo-lab--session -1 0) 'handled)
+                  (_ 'release)))
    :keys-hint "方向键 移动格子焦点 · RET 使用工具 · TAB 选控件"
    :reset-notice "已重置搜索，地图和起终点保留。"
    :compare #'etaf-algo-lab--pf-compare)

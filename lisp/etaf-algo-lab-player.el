@@ -24,7 +24,7 @@
 (cl-defstruct (etaf-algo-lab--lab (:constructor etaf-algo-lab--make-lab))
   "Description of one algorithm laboratory."
   id title summary intro create step terminal reset narration counters memory
-  board controls legend keys keys-hint reset-notice compare)
+  board controls legend keys direction keys-hint reset-notice compare)
 
 (cl-defstruct (etaf-algo-lab--session (:constructor etaf-algo-lab--session-create))
   "Live playing state of one mounted laboratory."
@@ -338,6 +338,9 @@ in the same reading order, so the board never pushes the controls off screen."
   ;; Every panel shares one surface, padding and inner gap, and the chart
   ;; panel hugs its fixed-width chart instead of leaving an empty strip.
   (column :width 'stretch :overflow 'hidden :item-gap '(lh 1)
+      :on-direction (lambda (direction)
+                      (let ((handler (plist-get lab :direction)))
+                        (if (functionp handler) (funcall handler direction) 'release)))
       (flex :flex-wrap 'wrap :gap '((lh 0) (ch 2))
             :align-items 'baseline
         (text :font-weight 'bold (expr (etaf-algo-lab--lab-title lab)))
