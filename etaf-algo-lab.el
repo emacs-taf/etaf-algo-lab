@@ -23,6 +23,11 @@
 ;;   3. Explore:  "批量对比" runs every algorithm headlessly on the current
 ;;                input and reports their real work counts side by side.
 ;;
+;; Navigation-state `?' opens ETAF's searchable, read-only modal help in
+;; the same application buffer.  It never operates the player or pauses its
+;; animation.  Escape ends search editing before closing help; a backdrop
+;; click also closes it, restoring focus and preserving laboratory state.
+;;
 ;; Only the interfaces listed below are supported for use by other packages.
 ;; All unlisted symbols and implementation features are internal, including
 ;; names without a double hyphen.  This Commentary is the authoritative export

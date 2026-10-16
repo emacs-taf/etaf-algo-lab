@@ -55,6 +55,16 @@
       "name": "etaf-algo-lab-tests-switching-laboratory-disposes-old-session",
       "file": "tests/etaf-algo-lab-tests.el",
       "purpose": "Switching laboratories removes the previous board and starts the new one in the ready state."
+    },
+    {
+      "name": "etaf-algo-lab-tests-help-is-read-only-and-keeps-the-player",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "Both laboratories expose labelled scoped shortcuts in shared help without allowing background close or step commands, then restore the player."
+    },
+    {
+      "name": "etaf-algo-lab-tests-native-help-search-and-shade",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "Native search consumes player shortcut letters; layered Escape and backdrop clicks close only help and restore focus."
     }
   ]
 }

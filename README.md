@@ -51,10 +51,16 @@ it asks by title. `M-x etaf-algo-lab-close` releases the workspace.
 | `r` | reset the current laboratory |
 | `c` | batch comparison |
 | `q` | close |
+| `?` | searchable, read-only keyboard help in the same buffer |
 | arrows, `RET`, `TAB` | move cell focus, use the cell tool, reach the controls |
 
 Every laboratory's own hint line is appended to that list, so the keyboard
-surface is always visible.
+surface is always visible. Help lists the effective player bindings and the
+current laboratory's description without splitting the window. Search keeps
+shortcut letters as text; Escape exits search before closing help, and clicking
+the shade also closes it. Both restore focus without changing the laboratory.
+Animation continues underneath help; opening or closing it does not pause or
+resume the player.
 
 ## Layout
 
@@ -68,8 +74,8 @@ lisp/etaf-algo-lab-theme.el   shared palette
 ```
 
 The player owns play/pause/step/finish/reset/speed, the bounded timer, the live
-lines, the comparison run, the keymap and cleanup. A laboratory supplies a
-model, one `step`, a terminal predicate, and presentation callbacks. The board
+lines, the comparison run, the scoped key declarations and cleanup. A laboratory
+supplies a model, one `step`, a terminal predicate, and presentation callbacks. The board
 itself comes from the catalog: `etaf-ui`'s `etaf-tile-grid`.
 
 Dependencies point one way: `app` → laboratories → `player` → `etaf`/`etaf-ui`.

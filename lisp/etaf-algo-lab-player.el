@@ -6,7 +6,7 @@
 
 ;; A laboratory is data plus one single step.  The player owns play, pause,
 ;; single step, reset, finish, speed, the bounded timer, the narration lines, the
-;; comparison run, the keymap and cleanup, so a laboratory only describes its
+;; comparison run, scoped bindings and cleanup, so a laboratory only describes its
 ;; algorithm and its cells.  Nothing here starts a timer during rendering.
 ;;
 ;; Performance contract: every visible value the player publishes lives in its
@@ -39,9 +39,6 @@
 
 (defvar-local etaf-algo-lab--session nil
   "Laboratory session owned by the current buffer.")
-
-(defvar-local etaf-algo-lab--command-maps nil
-  "Buffer-local player keymap entry for `emulation-mode-map-alists'.")
 
 (defun etaf-algo-lab--register-lab (lab)
   "Register LAB in the catalog and return it."
@@ -246,27 +243,22 @@
     (etaf-unmount runtime))
   (kill-buffer (current-buffer)))
 
+(defun etaf-algo-lab--keys (lab)
+  "Return the player's labelled scoped bindings and LAB's additional keys."
+  (append (list (list "p" #'etaf-algo-lab--toggle "开始或暂停")
+                (list "n" #'etaf-algo-lab--step-command "单步")
+                (list "r" #'etaf-algo-lab--reset-command "重置实验")
+                (list "c" #'etaf-algo-lab--compare-command "批量对比")
+                (list "f" #'etaf-algo-lab--finish-command "跳到完成")
+                (list "q" #'etaf-algo-lab--close-command "关闭实验室"))
+          (etaf-algo-lab--lab-keys lab)))
+
 (defun etaf-algo-lab--install (session)
-  "Attach SESSION to its runtime, keymap and disposal hook."
+  "Attach SESSION to its runtime and disposal hook."
   (let ((runtime (etaf-current-runtime)))
     (setf (etaf-algo-lab--session-runtime session) runtime)
     (with-current-buffer (etaf-runtime-buffer runtime)
-      (setq-local etaf-algo-lab--session session)
-      (let ((map (make-sparse-keymap)))
-        (define-key map (kbd "p") #'etaf-algo-lab--toggle)
-        (define-key map (kbd "n") #'etaf-algo-lab--step-command)
-        (define-key map (kbd "r") #'etaf-algo-lab--reset-command)
-        (define-key map (kbd "c") #'etaf-algo-lab--compare-command)
-        (define-key map (kbd "f") #'etaf-algo-lab--finish-command)
-        (define-key map (kbd "q") #'etaf-algo-lab--close-command)
-        (dolist (binding (etaf-algo-lab--lab-keys (etaf-algo-lab--session-lab session)))
-          (define-key map (car binding) (cdr binding)))
-        (setq-local etaf-algo-lab--command-maps
-                    (list (cons 'etaf-algo-lab--session map)))
-        (setq-local emulation-mode-map-alists
-                    (cons 'etaf-algo-lab--command-maps
-                          (remq 'etaf-algo-lab--command-maps
-                                emulation-mode-map-alists)))))
+      (setq-local etaf-algo-lab--session session))
     (etaf-on-unmounted (lambda () (etaf-algo-lab--dispose session)))))
 
 (defun etaf-algo-lab--dispose (session)
@@ -278,10 +270,7 @@
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
         (when (eq etaf-algo-lab--session session)
-          (setq etaf-algo-lab--session nil)
-          (setq-local emulation-mode-map-alists
-                      (remq 'etaf-algo-lab--command-maps
-                            emulation-mode-map-alists)))))))
+          (setq etaf-algo-lab--session nil))))))
 
 ;;; Presentation shared by the player and every laboratory.
 
@@ -328,9 +317,7 @@ the visual anchor right); a narrow or short window wraps back into one column
 in the same reading order, so the board never pushes the controls off screen."
   :bindings ((lab (etaf-algo-lab--lab lab-id))
              (session (etaf-algo-lab--session-make lab)))
-  :setup (progn
-           (etaf-theme-provide etaf-algo-lab-palette)
-           (etaf-algo-lab--install session))
+  :setup (etaf-algo-lab--install session)
   :view
   ;; The application above owns the page chrome (the scroll owner, the page
   ;; background, the centred capped measure and the page padding); the player

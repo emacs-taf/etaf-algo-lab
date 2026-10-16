@@ -52,6 +52,7 @@
   "Render the workspace: catalog bar plus the selected laboratory."
   :bindings ((current (etaf-ref (or etaf-algo-lab--initial-lab
                                     etaf-algo-lab-default-lab))))
+  :setup (etaf-theme-provide etaf-algo-lab-palette)
   :view
   ;; The page owns the scroll region, the page background and the centred
   ;; measure.  The content column is capped at 98 columns so an ultra-wide
@@ -60,6 +61,9 @@
   ;; padding belongs to the capped inner column, so the scroll owner spans
   ;; the whole window.
   (column :width '(vw 100) :height '(vh 100) :overflow 'scroll
+          :aria-label "算法实验室"
+          :keys (etaf-algo-lab--keys (etaf-algo-lab--lab (etaf-value current)))
+          :help (etaf-algo-lab--lab-summary (etaf-algo-lab--lab (etaf-value current)))
           :cross-align 'center
           :color (etaf-algo-lab-token :fg)
           :background-color (etaf-algo-lab-token :bg)
