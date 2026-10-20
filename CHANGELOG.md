@@ -2,7 +2,16 @@
 
 ## Unreleased
 
+### Changed
+
+- The workspace runs on the ETAF application runtime and requires etaf 0.3.0
+  and etaf-ui 0.2.0. It owns its window without a mode line, and opening it
+  again shows the workspace already there unless a laboratory is requested.
+
 ### Fixed
+
+- The columns around the page now use the shared palette instead of the
+  frame's own background.
 
 - Player shortcuts now respect shared help and text editing. Pressing `q`,
   `n` or another player key while reading help no longer closes or operates

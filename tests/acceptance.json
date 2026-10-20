@@ -17,6 +17,11 @@
       "purpose": "The catalog lists both laboratories and closing releases the workspace runtime and buffer."
     },
     {
+      "name": "etaf-algo-lab-tests-workspace-is-an-application",
+      "file": "tests/etaf-algo-lab-tests.el",
+      "purpose": "The workspace opens as an ETAF application with no caret, and the canvas around the page uses the shared palette background."
+    },
+    {
       "name": "etaf-algo-lab-tests-player-controls-publish-status",
       "file": "tests/etaf-algo-lab-tests.el",
       "purpose": "Play, pause, single step and reset each publish their documented status and counters."

@@ -239,9 +239,11 @@
 (defun etaf-algo-lab--close-command ()
   "Close only the current buffer's laboratory."
   (interactive)
-  (when-let* ((runtime (etaf-runtime-for-buffer (current-buffer))))
-    (etaf-unmount runtime))
-  (kill-buffer (current-buffer)))
+  (if (etaf-app-buffer (buffer-name (current-buffer)))
+      (etaf-app-close)
+    (when-let* ((runtime (etaf-runtime-for-buffer (current-buffer))))
+      (etaf-unmount runtime))
+    (kill-buffer (current-buffer))))
 
 (defun etaf-algo-lab--keys (lab)
   "Return the player's labelled scoped bindings and LAB's additional keys."

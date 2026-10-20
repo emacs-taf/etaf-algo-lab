@@ -11,23 +11,28 @@
 
 ;;; Code:
 
-(defconst etaf-algo-lab-palette
+(require 'etaf-ui)
+
+(defconst etaf-algo-lab--roles
   '(:fg "#E5EDF7" :muted "#9CADC1" :bg "#101925" :surface "#182332"
-    :accent "#356BB2" :accent-soft "#25374F" :line "#2B3A4E"
-    :ui-fg "#E5EDF7" :ui-bg "#101925" :ui-border "#2B3A4E"
-    :ui-muted-fg "#9CADC1" :ui-success-fg "#4ADE80" :ui-danger-fg "#F87171"
-    :ui-panel-fg "#E5EDF7" :ui-panel-bg "#182332" :ui-panel-border "#2B3A4E"
-    :ui-button-primary-fg "#FFFFFF" :ui-button-primary-bg "#356BB2"
-    :ui-button-primary-border "#356BB2"
-    :ui-button-secondary-fg "#DCE6F5" :ui-button-secondary-bg "#25374F"
-    :ui-button-secondary-border "#25374F"
-    :ui-button-ghost-fg "#C3D0E0" :ui-button-ghost-bg "#182332"
-    :ui-button-ghost-border "#2B3A4E"
-    :ui-disabled-fg "#7C8CA1" :ui-disabled-bg "#1B2534"
-    :ui-disabled-border "#26344A"
-    :ui-table-border "#2B3A4E" :ui-table-selected-fg "#E4ECFF"
-    :ui-table-selected-bg "#25374F" :ui-pagination-muted-fg "#9CADC1")
-  "Semantic colors shared by the workspace chrome and every laboratory.")
+    :accent "#356BB2" :accent-soft "#25374F" :line "#2B3A4E")
+  "Semantic colors the workspace Views read through `etaf-algo-lab-token'.")
+
+(defvar etaf-algo-lab-palette
+  (append
+   etaf-algo-lab--roles
+   ;; The catalog derives the rest from these roles; these entries keep the
+   ;; workspace's own quieter buttons and table selection.
+   (list :ui-button-secondary-fg "#DCE6F5"
+         :ui-button-ghost-fg "#C3D0E0"
+         :ui-disabled-bg "#1B2534" :ui-disabled-border "#26344A"
+         :ui-table-selected-fg "#E4ECFF" :ui-table-selected-bg "#25374F")
+   (etaf-ui-theme-tokens
+    (list :bg "#101925" :fg "#E5EDF7" :panel "#182332" :border "#2B3A4E"
+          :muted "#9CADC1" :dim "#7C8CA1" :accent "#356BB2"
+          :accent-fg "#FFFFFF" :accent-soft "#25374F"
+          :success "#4ADE80" :danger "#F87171")))
+  "Theme tokens shared by the workspace chrome and every laboratory.")
 
 (defun etaf-algo-lab-token (key)
   "Return the shared palette value for KEY."

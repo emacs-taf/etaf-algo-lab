@@ -86,11 +86,13 @@
                              :lab-id (etaf-value current))
                        nil)))))
 
+;;;###autoload
 (defun etaf-algo-lab-open (&optional lab buffer-name)
   "Open the laboratory workspace in BUFFER-NAME, selecting LAB.
 
 LAB is a laboratory identifier or its displayed title.  BUFFER-NAME defaults
-to `etaf-algo-lab-buffer-name'.  An existing runtime in that buffer is replaced."
+to `etaf-algo-lab-buffer-name'.  Opening again shows the workspace already
+there; an explicit LAB replaces it so the requested laboratory is selected."
   (interactive
    (list (when current-prefix-arg
            (completing-read "实验室："
@@ -102,23 +104,41 @@ to `etaf-algo-lab-buffer-name'.  An existing runtime in that buffer is replaced.
          nil))
   (let* ((id (etaf-algo-lab--resolve lab))
          (_ (etaf-algo-lab--lab id))
-         (buffer (get-buffer-create (or buffer-name etaf-algo-lab-buffer-name))))
-    (when-let* ((runtime (etaf-runtime-for-buffer buffer)))
-      (with-current-buffer buffer (etaf-unmount runtime)))
-    (with-current-buffer buffer
-      (let ((etaf-algo-lab--initial-lab id))
-        (etaf-mount buffer (etaf-view (etaf-algo-lab--app))))
-      (when (called-interactively-p 'interactive) (pop-to-buffer buffer)))
+         (name (or buffer-name etaf-algo-lab-buffer-name))
+         ;; An explicit LAB replaces the open workspace so the requested
+         ;; laboratory is the one selected.
+         (open-p (and (not lab) (etaf-app-buffer name)))
+         (buffer (if open-p
+                     (etaf-app-buffer name)
+                   (when (and (etaf-app-buffer name)) (etaf-app-close name))
+                   nil)))
+    (unless buffer
+      (setq buffer
+            (let ((etaf-algo-lab--initial-lab id))
+              (etaf-app-open name (etaf-view (etaf-algo-lab--app))
+                             :state id
+                             ;; The page owns its surface; the canvas colors
+                             ;; show in the columns it leaves around the
+                             ;; measure.
+                             :background (etaf-algo-lab-token :bg)
+                             :foreground (etaf-algo-lab-token :fg)
+                             :cursor nil
+                             :display (and (called-interactively-p 'interactive)
+                                           t)))))
+    (when (called-interactively-p 'interactive) (pop-to-buffer-same-window buffer))
     buffer))
 
+;;;###autoload
 (defun etaf-algo-lab-close (&optional buffer-name)
   "Unmount and kill the laboratory workspace in BUFFER-NAME."
   (interactive)
-  (let ((buffer (get-buffer (or buffer-name etaf-algo-lab-buffer-name))))
-    (when buffer
-      (when-let* ((runtime (etaf-runtime-for-buffer buffer)))
-        (with-current-buffer buffer (etaf-unmount runtime)))
-      (when (buffer-live-p buffer) (kill-buffer buffer))))
+  (let* ((name (or buffer-name etaf-algo-lab-buffer-name))
+         (buffer (get-buffer name)))
+    (cond ((etaf-app-buffer name) (etaf-app-close name))
+          (buffer
+           (when-let* ((runtime (etaf-runtime-for-buffer buffer)))
+             (with-current-buffer buffer (etaf-unmount runtime)))
+           (when (buffer-live-p buffer) (kill-buffer buffer)))))
   nil)
 
 (defun etaf-algo-lab-labs ()

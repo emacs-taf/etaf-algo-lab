@@ -89,6 +89,23 @@ only digit-only tokens count; the carrier's other whitespace is filler."
     (should (string-match-p "寻路实验台" (etaf-algo-lab-test--text runtime))))
   (should-not (etaf-runtime-for-buffer "*算法实验室*")))
 
+;; Requires the application runtime: before it the workspace mounted by hand
+;; and the area around the page kept the frame's own background.
+(ert-deftest etaf-algo-lab-tests-workspace-is-an-application ()
+  "The workspace is an ETAF application whose canvas uses the shared palette."
+  (etaf-algo-lab-test--with (buffer _runtime) 'sorting
+    (should (etaf-app-state buffer))
+    (should-not (buffer-local-value 'cursor-type buffer))
+    (let ((canvas (car (last (alist-get
+                              'default
+                              (buffer-local-value 'face-remapping-alist buffer))))))
+      ;; Painted from the palette instead of leaving the frame's default face.
+      (should (stringp (plist-get canvas :background))))
+    ;; The root key closes the workspace through the application runtime.
+    (switch-to-buffer buffer)
+    (execute-kbd-macro (kbd "q"))
+    (should-not (buffer-live-p buffer))))
+
 (ert-deftest etaf-algo-lab-tests-player-controls-publish-status ()
   "Play, pause, single step and reset publish their visible state."
   (etaf-algo-lab-test--with (buffer runtime) 'pathfinding
